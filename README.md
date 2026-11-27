@@ -16,37 +16,57 @@
 ```
 .
 ├── README.md                        ← 本文件
-├── docs/                            ← 全部说明文档 + 课程任务书
+├── SUBMISSION.md                    ← 提交清单（对照任务书逐项打勾）
+├── docs/                            ← 说明文档 + 课程任务书
 │   ├── README.md                           # 文档索引与阅读顺序
-│   ├── 任务书/                             # 课程原始材料
-│   │   ├── 任务书.pdf                      # 任务书（16 页）
-│   │   └── 任务书-文本版.txt               # 纯文本提取版，便于检索
-│   ├── 00-总览与提交清单.md                # 全局要求：方法、演示、提交包、评分
-│   ├── 01-题目五解读与原理.md              # 题目要求 + 算法原理详解
-│   ├── 02-实验设计与序列草案.md            # 三组实验序列设计、文件格式、推演模板
-│   ├── 03-大模型交互记录指南.md            # 怎么问模型、怎么记录、防混淆要点
-│   ├── 04-现场验收与答辩准备.md            # 验收示例、常见追问、备答清单
-│   └── 05-报告模板说明.md                  # 模板来源、选型理由、编译与控制篇幅
-├── report/                          ← 报告模板（LaTeX / XeLaTeX）
-│   ├── report-template.tex          # 小组报告（基于计算方法实验报告模板）
-│   ├── Makefile                     # make 即编译（xelatex 两遍）
-│   ├── assets/logo.png              # 校徽（取自模板库）
-│   └── report-template.pdf          # 编译产物
+│   ├── 任务书/                             # 课程原始材料（PDF + 文本版）
+│   ├── 00-总览与提交清单.md                # 全局要求、演示要求、评分办法
+│   ├── 01-题目五解读与原理.md              # 题目要求 + 算法原理
+│   ├── 02-实验设计与序列草案.md            # 序列设计（含案例 4 反例）
+│   ├── 03-大模型交互记录指南.md            # 提问与记录方式
+│   ├── 04-现场验收与答辩准备.md            # 验收应对与追问清单
+│   ├── 05-报告模板说明.md                  # 模板来源、编译、篇幅约定
+│   └── 06-假设清单与登记表.md              # 六条假设与登记表模板
 ├── web/                             ← 演示网页（Cloudflare Pages 部署根目录）
+│   ├── index.html                   # 页面结构
+│   ├── style.css                    # 样式
+│   ├── core.js                      # 状态、分配/释放、三项检查（浏览器/Node 通用）
+│   ├── strategy.js                  # 首次适应、最佳适应
+│   ├── cases.js                     # 预置案例
+│   └── app.js                       # 交互、布局渲染、轨迹导出
+├── tools/                           ← 实验脚本（Node，无第三方依赖）
+│   ├── gen-traces.js                # 批量生成轨迹与汇总
+│   ├── probe-criterion.js           # 判据探针（假设 A1）
+│   ├── buggy-demo.js                # 错误版本对照（假设 D1）
+│   └── search-counterexample.js     # 反例搜索（假设 B2，固定种子）
 ├── experiments/
-│   ├── inputs/                      ← 实验输入（操作序列 JSON）
-│   ├── traces/                      ← 程序原始输出（逐步布局与指标轨迹）
-│   └── hand-simulation/             ← 人工推演表（手算 vs 程序逐项核对）
-├── model-interactions/              ← 大模型关键交互记录（3~5 段）
-└── individual/                      ← 每人个人分析（半页~一页）
+│   ├── inputs/                      ← 5 组操作序列（4 组设计 + 1 组反例）
+│   ├── traces/                      ← 程序原始输出（逐步轨迹、汇总、检查记录）
+│   ├── hand-simulation/             ← 人工推演表（手算 vs 程序逐项核对）
+│   └── hypotheses/                  ← 六份假设登记表（含核验结论）
+├── model-interactions/              ← 大模型关键交互记录（4 段，待填真实问答）
+├── individual/                      ← 每人个人分析（6 份骨架）
+└── report/                          ← 报告模板（XeLaTeX）
+    ├── report-template.tex
+    ├── report-template.pdf
+    ├── Makefile
+    └── assets/logo.png
 ```
 
 ## 二、快速开始
 
 ```bash
-# 本地运行（无任何依赖，直接用浏览器打开）
-open web/index.html          # macOS
-# 或双击 web/index.html
+# 演示网页：无第三方依赖，直接用浏览器打开
+open web/index.html          # macOS（或双击文件）
+
+# 重新生成全部实验数据（需要 Node.js）
+node tools/gen-traces.js
+node tools/probe-criterion.js
+node tools/buggy-demo.js
+node tools/search-counterexample.js 20261127 16
+
+# 编译报告（需要 XeLaTeX）
+cd report && make
 ```
 
 **在线演示**：部署到 Cloudflare Pages 后填写
