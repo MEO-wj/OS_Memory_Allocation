@@ -1,0 +1,44 @@
+{
+  "case_id": "case2b-merge-left",
+  "total_memory": 100,
+  "note": "仅左合并专项：第 8 步释放 C，左邻空闲、右邻已分配",
+  "ops": [
+    {
+      "op": "alloc",
+      "id": "A",
+      "size": 10
+    },
+    {
+      "op": "alloc",
+      "id": "B",
+      "size": 10
+    },
+    {
+      "op": "alloc",
+      "id": "C",
+      "size": 10
+    },
+    {
+      "op": "alloc",
+      "id": "D",
+      "size": 10
+    },
+    {
+      "op": "free",
+      "id": "A"
+    },
+    {
+      "op": "alloc",
+      "id": "E",
+      "size": 10
+    },
+    {
+      "op": "free",
+      "id": "B"
+    },
+    {
+      "op": "free",
+      "id": "C"
+    }
+  ]
+}

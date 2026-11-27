@@ -1,0 +1,46 @@
+{
+  "case_id": "case4-b2-counterexample",
+  "total_memory": 100,
+  "note": "假设 B2 反例：最佳适应申请失败 2 次，首次适应 1 次（随机种子 20261127）",
+  "seed": 20261127,
+  "ops": [
+    {
+      "op": "alloc",
+      "id": "A",
+      "size": 45
+    },
+    {
+      "op": "alloc",
+      "id": "B",
+      "size": 20
+    },
+    {
+      "op": "free",
+      "id": "A"
+    },
+    {
+      "op": "alloc",
+      "id": "C",
+      "size": 25
+    },
+    {
+      "op": "alloc",
+      "id": "D",
+      "size": 50
+    },
+    {
+      "op": "free",
+      "id": "B"
+    },
+    {
+      "op": "alloc",
+      "id": "E",
+      "size": 25
+    },
+    {
+      "op": "alloc",
+      "id": "F",
+      "size": 50
+    }
+  ]
+}

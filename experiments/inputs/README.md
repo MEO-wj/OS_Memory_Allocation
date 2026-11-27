@@ -10,6 +10,7 @@
 | `case2-merge-all.json` | 三种合并 + 非法释放（TOTAL=100，12 步） | docs/02 案例 2 |
 | `case2b-merge-left.json` | 仅左侧合并专项（TOTAL=100，8 步） | docs/02 案例 2 附例 |
 | `case3-fragmentation.json` | 外部碎片导致失败（TOTAL=90，9 步） | docs/02 案例 3 |
+| `case4-b2-counterexample.json` | B2 反例：BF 失败次数多于 FF（TOTAL=100，8 步，种子 20261127） | 由 `tools/search-counterexample.js` 生成 |
 
 ## 硬性要求
 

@@ -1,0 +1,48 @@
+{
+  "case_id": "case3-fragmentation",
+  "total_memory": 90,
+  "note": "外部碎片导致失败：第 6 步申请 50 失败（总量 60 够、最大块 30 不足）",
+  "ops": [
+    {
+      "op": "alloc",
+      "id": "A",
+      "size": 30
+    },
+    {
+      "op": "alloc",
+      "id": "B",
+      "size": 30
+    },
+    {
+      "op": "alloc",
+      "id": "C",
+      "size": 30
+    },
+    {
+      "op": "free",
+      "id": "A"
+    },
+    {
+      "op": "free",
+      "id": "C"
+    },
+    {
+      "op": "alloc",
+      "id": "D",
+      "size": 50
+    },
+    {
+      "op": "alloc",
+      "id": "E",
+      "size": 20
+    },
+    {
+      "op": "free",
+      "id": "B"
+    },
+    {
+      "op": "free",
+      "id": "E"
+    }
+  ]
+}

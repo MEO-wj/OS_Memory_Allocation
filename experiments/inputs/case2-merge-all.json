@@ -1,0 +1,61 @@
+{
+  "case_id": "case2-merge-all",
+  "total_memory": 100,
+  "note": "三种合并 + 非法操作：仅右合并、双侧三块合一、仅左合并；第 11 步非法释放",
+  "ops": [
+    {
+      "op": "alloc",
+      "id": "A",
+      "size": 20
+    },
+    {
+      "op": "alloc",
+      "id": "B",
+      "size": 20
+    },
+    {
+      "op": "alloc",
+      "id": "C",
+      "size": 20
+    },
+    {
+      "op": "alloc",
+      "id": "D",
+      "size": 20
+    },
+    {
+      "op": "free",
+      "id": "A"
+    },
+    {
+      "op": "free",
+      "id": "C"
+    },
+    {
+      "op": "free",
+      "id": "B"
+    },
+    {
+      "op": "alloc",
+      "id": "E",
+      "size": 55
+    },
+    {
+      "op": "free",
+      "id": "E"
+    },
+    {
+      "op": "alloc",
+      "id": "F",
+      "size": 30
+    },
+    {
+      "op": "free",
+      "id": "G"
+    },
+    {
+      "op": "free",
+      "id": "F"
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "case_id": "case1-divergence",
+  "total_memory": 100,
+  "note": "两策略分歧：第 5 步 FF 取低地址块、BF 取恰好等大尾块；第 7 步合并类型随之不同",
+  "ops": [
+    {
+      "op": "alloc",
+      "id": "A",
+      "size": 30
+    },
+    {
+      "op": "alloc",
+      "id": "B",
+      "size": 30
+    },
+    {
+      "op": "alloc",
+      "id": "C",
+      "size": 30
+    },
+    {
+      "op": "free",
+      "id": "A"
+    },
+    {
+      "op": "alloc",
+      "id": "D",
+      "size": 10
+    },
+    {
+      "op": "free",
+      "id": "B"
+    },
+    {
+      "op": "free",
+      "id": "C"
+    }
+  ]
+}
