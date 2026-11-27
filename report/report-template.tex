@@ -90,7 +90,12 @@
     {\zihao{4} \the\year 年 \the\month 月 \the\day 日}
 \end{titlepage}
 
-% ==================== 正文（页码从 1 开始） ====================
+% ==================== 目录（不编页码） ====================
+\pagestyle{empty}
+\tableofcontents
+\clearpage
+
+% ==================== 正文（页码从第一章起算为 1） ====================
 \pagenumbering{arabic}
 \pagestyle{plain}
 
