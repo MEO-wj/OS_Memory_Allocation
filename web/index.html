@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>连续内存分配与碎片问题验证 · 题目五</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>连续内存分配与碎片问题验证</h1>
+  <p class="sub">操作系统原理课内实践 · 第 12 组 · 题目五　|　首次适应（First Fit）与最佳适应（Best Fit）对照模拟</p>
+</header>
+
+<main>
+  <!-- 左栏：输入与操作 -->
+  <section class="panel" id="input-panel">
+    <h2>1. 实验输入</h2>
+
+    <div class="row">
+      <label for="total">总内存 T：</label>
+      <input id="total" type="number" min="1" step="1" value="90">
+      <label for="strategy">策略：</label>
+      <select id="strategy">
+        <option value="ff">首次适应 First Fit</option>
+        <option value="bf">最佳适应 Best Fit</option>
+      </select>
+    </div>
+
+    <label class="block-label" for="ops">操作序列（每行一条：<code>alloc 编号 大小</code> 或 <code>free 编号</code>）</label>
+    <textarea id="ops" rows="11" spellcheck="false"></textarea>
+
+    <div class="row">
+      <button id="btn-step" class="primary">单步执行</button>
+      <button id="btn-run">运行到底</button>
+      <button id="btn-reset">重置</button>
+      <button id="btn-export">导出轨迹</button>
+    </div>
+
+    <label class="block-label">预置案例</label>
+    <div class="row" id="presets"></div>
+    <p class="hint" id="case-note"></p>
+
+    <label class="block-label">非法操作自检（点击后执行）</label>
+    <div class="row">
+      <button data-test="dup-alloc">重复申请同一编号</button>
+      <button data-test="dup-free">重复释放</button>
+      <button data-test="bad-size">申请量为 0</button>
+      <button data-test="too-big">申请量超过总内存</button>
+    </div>
+  </section>
+
+  <!-- 右栏：布局与指标 -->
+  <section class="panel" id="view-panel">
+    <h2>2. 内存布局（带地址）</h2>
+    <div id="legend" class="legend">
+      <span><i class="swatch alloc"></i>已分配</span>
+      <span><i class="swatch free"></i>空闲</span>
+      <span class="addr-note">条块上数字为地址，块内为编号与长度</span>
+    </div>
+    <div id="bar" class="bar"></div>
+    <div id="ticks" class="ticks"></div>
+    <div id="layout-text" class="layout-text"></div>
+
+    <h2>3. 四项指标</h2>
+    <div class="metrics" id="metrics">
+      <div class="metric"><span class="k">空闲总量</span><span class="v" id="m-free-total">–</span></div>
+      <div class="metric"><span class="k">最大空闲块</span><span class="v" id="m-free-max">–</span></div>
+      <div class="metric"><span class="k">空闲块数量</span><span class="v" id="m-free-count">–</span></div>
+      <div class="metric"><span class="k">本步结果</span><span class="v" id="m-result">–</span></div>
+    </div>
+    <div id="checks" class="checks"></div>
+    <div id="message" class="message"></div>
+  </section>
+
+  <!-- 全宽：步骤日志 -->
+  <section class="panel wide" id="log-panel">
+    <h2>4. 逐步轨迹</h2>
+    <div class="row small">
+      <span id="progress">第 0 步 / 共 0 步</span>
+      <span class="hint">★ 表示该步两种策略的结果不同（差异步）</span>
+    </div>
+    <div class="table-wrap">
+      <table id="log">
+        <thead>
+          <tr>
+            <th>步</th><th>操作</th><th>选中块</th><th>布局（已分配｜空闲）</th>
+            <th>空闲总量</th><th>最大块</th><th>块数</th><th>结果</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <p>本页面为离散模拟程序，所有状态转移由 <code>core.js</code> 与 <code>strategy.js</code> 计算，可单步复现。
+  证据类型：<strong>模拟运行</strong>（非真实内核内存管理）。</p>
+</footer>
+
+<script src="core.js"></script>
+<script src="strategy.js"></script>
+<script src="cases.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
