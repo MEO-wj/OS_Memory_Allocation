@@ -1,0 +1,588 @@
+% 操作系统原理课内实践项目报告：题目五 连续内存分配与碎片问题验证
+% 版式基线：Paper_Library/计算方法实验报告模板（汕头大学课程报告 LaTeX 模板库）
+% 编译：XeLaTeX（中文必须 XeLaTeX）。VS Code 中 Ctrl+Alt+B 编译，Ctrl+Alt+V 预览。
+\documentclass[12pt,a4paper]{ctexart}
+% 中文默认使用 ctex 自带的 fandol 字体（TeX Live / MiKTeX 均自带）。
+% 若在 Windows 上希望使用宋体/黑体，可改为 fontset=windows。
+
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{geometry}
+\usepackage{caption}
+\usepackage{listings}
+\usepackage{float}   % 用 [H] 精确放置图表，避免浮动造成的大片空白
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{hyperref}
+\hypersetup{hidelinks}
+
+\geometry{left=2.6cm,right=2.6cm,top=2.6cm,bottom=2.6cm}
+\graphicspath{{assets/},{../figures/}}
+\captionsetup{font=small,labelsep=quad}
+\renewcommand{\arraystretch}{1.15}
+
+\lstset{
+    language=Python,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\bfseries,
+    numbers=left,
+    numberstyle=\tiny,
+    numbersep=6pt,
+    frame=single,
+    breaklines=true,
+    breakindent=2em,
+    columns=fullflexible,
+    keepspaces=true,
+    showstringspaces=false,
+    tabsize=4,
+    xleftmargin=1.2em,
+}
+
+% 放宽浮动体限制，避免"图在上、表在下、中间空白"的排版
+\renewcommand{\topfraction}{0.92}
+\renewcommand{\bottomfraction}{0.85}
+\renewcommand{\textfraction}{0.08}
+\renewcommand{\floatpagefraction}{0.7}
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{3}
+\setcounter{totalnumber}{4}
+
+\setlist{nosep,leftmargin=2em}
+
+% ==================== 内存布局图命令 ====================
+% \membar{总长度}{块列表}：块列表用逗号分隔，每项形如 类型/标签/长度
+%   类型 f=空闲块, a=已分配块；标签取短名（地址由上方刻度标出）
+%   例：\membar{90}{f/{空闲}/30, a/B/30, f/{空闲}/30}
+%   条形宽度自动缩放到当前行宽，块高约 0.9cm；标签留空则只画色块
+\definecolor{freegreen}{RGB}{226,240,217}
+\definecolor{allocblue}{RGB}{189,215,238}
+\newcommand{\membar}[2]{%
+\begin{tikzpicture}[x=\dimexpr\linewidth/#1\relax, y=0.9cm]
+  \xdef\cursor{0}
+  \foreach \btype/\blab/\blen [count=\bi] in {#2}{%
+    \def\fftype{f}\def\aatype{a}%
+    \ifx\btype\fftype
+      \filldraw[fill=freegreen,draw=black] (\cursor,0) rectangle ({\cursor+\blen},1);
+    \else
+      \ifx\btype\aatype
+        \filldraw[fill=allocblue,draw=black] (\cursor,0) rectangle ({\cursor+\blen},1);
+      \fi
+    \fi
+    \pgfmathsetmacro{\midpt}{\cursor+\blen/2}%
+    \node[font=\scriptsize] at (\midpt,0.5) {\blab};
+    \ifnum\bi=1 \draw (\cursor,0) -- (\cursor,1.25)
+      node[above,anchor=south west,font=\tiny]{\pgfmathprintnumber[fixed,precision=0]{\cursor}}; \fi
+    \pgfmathparse{\cursor+\blen}\xdef\cursor{\pgfmathresult}
+    \draw (\cursor,0) -- (\cursor,1.25)
+      node[above,anchor=south east,font=\tiny]{\pgfmathprintnumber[fixed,precision=0]{\cursor}};
+  }
+\end{tikzpicture}\par}
+
+% 代码附录在文件缺失时给出占位，保证模板可独立编译
+\newcommand{\codefile}[1]{%
+  \IfFileExists{#1}{\lstinputlisting{#1}}%
+  {\itshape\small 待补充：实现完成后将 \texttt{#1} 放入仓库对应目录，本附录自动引入。\par}}
+
+\begin{document}
+
+% ==================== 封面 ====================
+\begin{titlepage}
+    \centering
+    \vspace*{1.6cm}
+    \includegraphics[width=4.2cm]{assets/logo.png}\\[1.2cm]
+    {\zihao{2} \textbf{汕头大学}}\\[0.6cm]
+    {\zihao{1} \textbf{操作系统原理课内实践项目报告}}\\[2cm]
+    {\zihao{3} 题目五：连续内存分配与碎片问题验证}\\[2.4cm]
+
+    \zihao{4}
+    \renewcommand{\arraystretch}{1.8}
+    \begin{tabular}{rl}
+        组\hspace{2em}号： & \underline{\hspace{4cm}} \\
+        小组成员： & \underline{\hspace{2.4cm}}、\underline{\hspace{2.4cm}} \\
+                   & \underline{\hspace{2.4cm}}、\underline{\hspace{2.4cm}}、\underline{\hspace{2.4cm}} \\
+        专\hspace{2em}业： & \underline{\hspace{4cm}} \\
+        指导教师： & \underline{\hspace{4cm}} \\
+    \end{tabular}
+
+    \vfill
+    {\zihao{4} \the\year 年 \the\month 月 \the\day 日}
+\end{titlepage}
+
+% ==================== 摘要 ====================
+\pagestyle{empty}
+\begin{center}
+    {\zihao{3} \textbf{摘\quad 要}}
+\end{center}
+
+空闲内存总量足够时，一次连续内存申请仍可能失败——这是连续分配方式下外部碎片的基本表现。
+本文以大小固定的连续内存为对象，建立"已分配区 + 空闲区"的状态模型，
+独立实现\textbf{首次适应}（First Fit）与\textbf{最佳适应}（Best Fit）两种分配策略，
+以及释放时与相邻空闲区的\textbf{左合并、右合并与双侧合并}，
+在不计入管理开销、不作内存紧缩的简化假设下，对三组相同的申请释放序列做双策略对照实验。
+
+实验表明：申请 $W$ 成功的充要条件是\textbf{最大空闲块} $\ge W$，而空闲总量只是必要条件。
+在核心案例中，总内存 90、三个 30 的申请交错释放后，空闲总量为 60、最大空闲块仅为 30，
+申请 50 失败；该失败在两种策略下\textbf{完全相同}，
+说明外部碎片源自"地址必须连续"这一机制约束，与选块策略无关。
+两策略的差异体现在\textbf{把哪一块切碎}：首次适应按地址递增消耗、低地址端易碎化；
+最佳适应优先取恰好够用的最小块，其"最佳"仅指单次选择的剩余碎片最小，
+在中小申请反复出现时会把大块逐步碎化，并非所有负载下的整体最优。
+此外，策略差异具有累积效应：同一序列中一次选块分歧，
+会经后续释放合并演化为整体布局的不同，并使同一操作用触发不同的合并类型。
+本文同时给出不重叠、守恒（$\Sigma$已分配 $+$ $\Sigma$空闲 $=$ 总内存）与合并完整性三项逐步检查，
+验证失败与非法操作均不破坏原状态。
+
+\vspace{0.5cm}
+\noindent\textbf{关键词：}连续内存分配；首次适应；最佳适应；外部碎片；内存紧缩；空闲区合并
+
+\newpage
+\pagestyle{plain}
+\tableofcontents
+\newpage
+
+% ==================== 正文 ====================
+% ---------------------------------------------------------------
+\section{模型构建}\label{sec:model}
+
+本节给出内存与分配状态的形式化表示、两种分配策略的选择规则、释放时的合并规则，
+以及用于校验每一步正确性的守恒与合法性约束。
+
+\subsection{内存与状态表示}
+
+设一块大小固定为 $T$ 的连续内存，地址取整数 $0,1,\dots,T-1$。任一时刻的系统状态由两部分构成：
+已分配区集合 $\mathcal{A}$ 与空闲区集合 $\mathcal{F}$，
+其中每个区以二元组 $[s,\; s+\ell)$ 表示起址 $s$ 与长度 $\ell$：
+
+\begin{equation}
+    \mathcal{S} = \bigl(\mathcal{A},\ \mathcal{F}\bigr),\qquad
+    \mathcal{A}=\{(id_i,\,[s_i,\,s_i+\ell_i))\},\quad
+    \mathcal{F}=\{[s_j,\,s_j+\ell_j)\}.
+    \label{eq:state}
+\end{equation}
+
+初始状态为 $\mathcal{A}=\varnothing$、$\mathcal{F}=\{[0,T)\}$，即整块内存是一个空闲区。
+本文作如下简化（与实验范围一致）：申请量为正整数，不计块表等管理开销，\textbf{不作内存紧缩}，
+分配时自选中空闲块的\textbf{低地址端}切出，每组操作序列不超过 20 步且申请使用唯一编号。
+
+\subsection{两种分配策略}
+
+给定申请量 $w$，可装下 $w$ 的候选空闲区集合为
+\begin{equation}
+    \mathcal{C}(w)=\{F\in\mathcal{F}\mid \ell_F \ge w\}.
+    \label{eq:cand}
+\end{equation}
+若 $\mathcal{C}(w)=\varnothing$，申请失败且状态不变；否则两种策略以不同规则从 $\mathcal{C}(w)$ 中选块：
+
+\textbf{首次适应}按地址递增扫描，取第一个命中者：
+\begin{equation}
+    F_{\mathrm{FF}} = \arg\min_{F\in\mathcal{C}(w)} s_F ;
+    \label{eq:ff}
+\end{equation}
+
+\textbf{最佳适应}取长度最小者，长度相同时取地址最低者：
+\begin{equation}
+    F_{\mathrm{BF}} = \arg\min_{F\in\mathcal{C}(w)} \bigl(\ell_F,\ s_F\bigr).
+    \label{eq:bf}
+\end{equation}
+
+选中 $F=[s,s+\ell)$ 后自低地址端切出 $w$：新分配区取 $[s,s+w)$，
+空闲区更新为 $[s+w,\ s+\ell)$；若 $\ell=w$ 则整块从 $\mathcal{F}$ 中删除。
+两种策略仅在式 \eqref{eq:ff} 与式 \eqref{eq:bf} 的选择规则上不同，切割与失败处理完全一致。
+
+\subsection{释放与合并}
+
+释放编号为 $x$ 的已分配区 $[s,s+\ell)$ 后，其是否与邻居合并取决于两侧是否有空闲区：
+
+\begin{equation}
+\text{合并结果} =
+\begin{cases}
+[s_{L},\ s+\ell), & \text{左邻 } [s_{L},s)\in\mathcal{F},\ \text{右邻非空闲} \\
+[s,\ s_{R}), & \text{右邻 } [s+\ell,s_{R})\in\mathcal{F},\ \text{左邻非空闲} \\
+[s_{L},\ s_{R}), & \text{两侧均为空闲区} \\
+[s,\ s+\ell), & \text{两侧均非空闲}
+\end{cases}
+\label{eq:merge}
+\end{equation}
+
+实现上采取"插入后顺序扫描"：将被释放区按地址插入 $\mathcal{F}$，随后自左向右扫描一遍，
+凡与前一项首尾相接者即合并。该做法天然覆盖式 \eqref{eq:merge} 的四种情形，
+包括最容易写错的三块合一，且不需要分别判断左右邻居。
+
+\subsection{守恒与合法性约束}\label{subsec:checks}
+
+每一步操作后自动检查以下三项，任一不成立即为实现缺陷：
+
+\begin{enumerate}
+    \item \textbf{不重叠}：$\forall\, X,Y\in\mathcal{A}$，$X\neq Y \Rightarrow [s_X,s_X+\ell_X)\cap[s_Y,s_Y+\ell_Y)=\varnothing$；
+    \item \textbf{守恒}：$\sum_{X\in\mathcal{A}}\ell_X + \sum_{F\in\mathcal{F}}\ell_F = T$，即已分配量与空闲量之和恒等于总内存；
+    \item \textbf{合并完整}：$\forall\, F,G\in\mathcal{F}$，$F$ 与 $G$ 不相邻，即不存在可合并而未合并的空闲区。
+\end{enumerate}
+
+此外，被拒绝的操作必须\textbf{不改变状态}：失败申请、重复释放、释放不存在的编号、
+申请量非正或超过 $T$，均应报错，且报错前后状态逐字段一致。这一条并非形式要求——
+若失败申请仍执行了切块，式 \eqref{eq:state} 的守恒立刻被破坏，
+后续所有指标（尤其最大空闲块）都会失真。
+
+\subsection{实验假设}
+
+表 \ref{tab:hypo} 列出本组在实验前提出的判断及其检验方式；
+其中 H1–H2 是模型约定，H3–H5 是可被实验证据支持或推翻的假设。
+
+\begin{table}[H]
+    \centering
+    \caption{模型约定与待检验假设}
+    \label{tab:hypo}
+    \small
+    \begin{tabular}{clp{6.9cm}}
+        \toprule
+        编号 & 内容 & 说明 \\
+        \midrule
+        H1 & 内存为整数地址、大小固定的连续空间 & 模型约定，不做紧缩 \\
+        H2 & 释放后立即合并，计入"合并完整"检查 & 模型约定 \\
+        H3 & 申请失败与选块策略无关 & 待检验：若两策略在核心案例同样失败则支持 \\
+        H4 & 最佳适应的整体效果优于首次适应 & 待检验：构造反例即可推翻 \\
+        H5 & 策略差异会经后续操作累积放大 & 待检验：观察同一序列的后续步骤 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+% ---------------------------------------------------------------
+\section{算法实现}\label{sec:algo}
+
+\subsection{总体流程}
+
+模拟器以一个状态对象（已分配表、空闲表）为核心，对外提供三个操作：
+\texttt{alloc(id, size)}、\texttt{free(id)} 与 \texttt{check()}。
+主程序读入操作序列（JSON），逐步执行并记录每步的四项指标——空闲总量、最大空闲块、
+空闲块数量、申请结果，同时输出带地址的布局快照，形成可复核的轨迹文件。
+两种策略共用同一套执行框架与记录格式，仅替换式 \eqref{eq:ff}、\eqref{eq:bf} 的选择函数，
+以保证对照实验的公平性。
+
+\subsection{选块与切割}
+
+首次适应只需按地址升序扫描空闲表，遇到第一个 $\ell_F\ge w$ 即返回，故复杂度为 $O(|\mathcal{F}|)$；
+最佳适应需遍历全部候选，复杂度同为 $O(|\mathcal{F}|)$，但\textbf{必须扫描完}才能确定最小者。
+两者的差异不在渐近复杂度，而在选择结果。切割按第 \ref{sec:model} 节规则执行，
+失败时直接返回而不修改任何字段。
+
+\subsection{释放与合并的实现}
+
+释放操作分两步：先按地址将区间插入空闲表（$O(|\mathcal{F}|)$ 定位），
+再自左向右扫描合并（$O(|\mathcal{F}|)$）。扫描式实现的关键在于\textbf{合并后仍需继续向后检查}：
+若三块连续，第一次合并产生的新块还要与后一块再合并，直到不再相邻为止。
+该实现同时给出了"合并完整"的自检依据——扫描结束后若仍存在相邻空闲区，即说明合并逻辑有遗漏。
+
+\subsection{轨迹记录与自检}
+
+每步记录以行为单位输出（JSONL），字段包括步号、操作、选中的空闲块、操作后布局、
+四项指标与三项检查结果。轨迹中同时写入策略名与序列标识，
+确保同一案例的两份轨迹可逐行对照；两策略结果不同的步标记为差异步，
+并在报告与轨迹中显式标出，便于人工核对与答辩时定位。
+
+% ---------------------------------------------------------------
+\section{实验设计}\label{sec:design}
+
+\subsection{三组操作序列}
+
+表 \ref{tab:cases} 给出三组序列的设计目标与规模。三组序列均从相同初始状态出发，
+分别以首次适应与最佳适应各运行一次，序列本身在实验前定稿并冻结。
+
+\begin{table}[H]
+    \centering
+    \caption{三组实验序列的设计}
+    \label{tab:cases}
+    \begin{tabular}{clccp{5.4cm}}
+        \toprule
+        案例 & 设计目标 & 总内存 & 步数 & 预期现象 \\
+        \midrule
+        1 & 基本行为与策略分歧 & 100 & 7 & 第 5 步选块分歧，第 7 步合并类型随之不同 \\
+        2 & 三种合并与非法操作 & 100 & 12 & 依次出现仅右、双侧、仅左合并；非法释放报错 \\
+        3 & 外部碎片导致失败 & 90 & 9 & 第 6 步申请 50 失败：总量 60 够、最大块 30 不足 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+其中案例 3 总内存取 90 而非 100，是为避免尾部残留空闲区干扰失败判定：
+三个 30 恰好占满内存，释放首尾两块后必然形成"两小块夹一大块已分配区"的格局，
+从而使失败原因唯一、可手工验证。
+
+\subsection{公平性控制}
+
+对照实验的有效性依赖两点：其一，两种策略必须读入\textbf{完全相同}的序列，
+且从同一初始状态出发；其二，序列一经定稿不得修改，否则轨迹与报告失去对应关系。
+为此输入文件与轨迹文件均纳入版本管理，报告中的每条结论都能追溯到具体的行与步号。
+
+\subsection{人工核对方法}
+
+选案例 3 作完整人工推演：逐笔写出每步操作后两策略的布局与四项指标，
+与程序轨迹逐行对照。人工推演的独立价值在于它只依赖式 \eqref{eq:ff}–\eqref{eq:merge} 的手工执行，
+不依赖代码正确性；若两者不一致，则以第一个出现差异的步骤为界，
+判断是规则理解有误还是实现存在缺陷。
+
+% ---------------------------------------------------------------
+\section{结果与分析}\label{sec:result}
+
+\subsection{核心案例：外部碎片导致的申请失败}
+
+表 \ref{tab:case3} 为案例 3 的逐步结果，图 \ref{fig:frag} 为失败瞬间的布局。
+第 6 步申请 50 时，空闲总量已达 60，但两块空闲区各为 30，均小于 50。
+
+\begin{table}[H]
+    \centering
+    \caption{案例 3 逐步轨迹（$T=90$，两策略结果一致）}
+    \label{tab:case3}
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \begin{tabular}{cl>{\raggedright\arraybackslash}p{3.2cm}cccc}
+        \toprule
+        步 & 操作 & 布局（分配区$\mid$空闲区） & 空闲总量 & 最大空闲块 & 结果 \\
+        \midrule
+        1--3 & alloc A/B/C 各 30 & A$[0,30)$ B$[30,60)$ C$[60,90)$$\mid$无空闲 & 0 & 0 & 成功 \\
+        4 & free A & B、C 占用$\mid$空闲 $[0,30)$ & 30 & 30 & --- \\
+        5 & free C & B 占用$\mid$空闲 $[0,30),[60,90)$ & 60 & 30 & --- \\
+        6 & alloc D 50 & \textbf{不变} & 60 & 30 & \textbf{失败} \\
+        7 & alloc E 20 & E$[0,20)$$\mid$空闲 $[20,30),[60,90)$ & 40 & 30 & 成功 \\
+        8 & free B & 空闲 $[20,90)$ & 70 & 70 & --- \\
+        9 & free E & 空闲 $[0,90)$ & 90 & 90 & --- \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \membar{90}{f/{空闲}/30, a/{B}/30, f/{空闲}/30}
+    \caption{案例 3 第 6 步失败瞬间的布局：空闲总量 60 足够，最大连续空闲块仅 30}
+    \label{fig:frag}
+\end{figure}
+
+第 6 步的结果直接支持 H3：\textbf{两种策略在同一操作上同样失败}。原因是失败发生在选块之前——
+式 \eqref{eq:cand} 的候选集本身为空，而 $\mathcal{C}(w)$ 与选块规则无关。
+因此"空闲总量足够"只是必要条件，\textbf{最大空闲块}才是连续申请能否成功的判据：
+
+\begin{equation}
+    \text{申请 } w \text{ 成功} \iff \max_{F\in\mathcal{F}} \ell_F \ge w .
+    \label{eq:criterion}
+\end{equation}
+
+第 7 与第 8 步还显示，失败之后系统并未受损：E 分配到低地址空闲区后，
+释放 B 触发双侧合并，空闲区恢复为单块。这说明外部碎片不是"内存泄漏"，
+而是分配布局的形态问题，可由后续释放逐步缓解——但这依赖运气，
+并非由分配策略保证，这正是需要紧缩机制（本文不作）的根本原因。
+
+\subsection{两策略的分歧与累积效应}
+
+表 \ref{tab:case1} 为案例 1 的对照结果。第 1--4 步两策略完全一致；
+第 5 步申请 10 时出现分歧：首次适应取最低地址的 $[0,30)$，切出 $[0,10)$、余 $[10,30)$；
+最佳适应在两个候选（30 与 10）中取最小的 $[90,100)$，恰好整块用完。
+
+\begin{table}[H]
+    \centering
+    \caption{案例 1 双策略对照（$T=100$）}
+    \label{tab:case1}
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \begin{tabular}{cl>{\raggedright\arraybackslash}p{4.2cm}>{\raggedright\arraybackslash}p{3.7cm}c}
+        \toprule
+        步 & 操作 & 首次适应 & 最佳适应 & 差异 \\
+        \midrule
+        1 & alloc A 30 & A$[0,30)$，空闲 $[30,100)$ & 同左 & \\
+        2 & alloc B 30 & B$[30,60)$，空闲 $[60,100)$ & 同左 & \\
+        3 & alloc C 30 & C$[60,90)$，空闲 $[90,100)$ & 同左 & \\
+        4 & free A & 空闲 $[0,30),[90,100)$ & 同左 & \\
+        5 & alloc D 10 & D$[0,10)$，空闲 $[10,30),[90,100)$ & D$[90,100)$，空闲 $[0,30)$ & $\star$ \\
+        6 & free B & 仅左合并 $\to$ 空闲 $[10,60),[90,100)$ & 仅左合并 $\to$ 空闲 $[0,60)$ & \\
+        7 & free C & 双侧合并 $\to$ 空闲 $[10,100)$ & 仅左合并 $\to$ 空闲 $[0,90)$ & \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+第 5 步的布局差异见图 \ref{fig:case1ff} 与图 \ref{fig:case1bf}。
+
+\begin{figure}[H]
+    \centering
+    \membar{100}{a/{D}/10, f/{空闲}/20, a/{B}/30, f/{空闲}/30, f/{空闲}/10}
+    \caption{案例 1 第 5 步后：首次适应把 D 放在低地址端，尾块保持完整}
+    \label{fig:case1ff}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \membar{100}{f/{空闲}/30, a/{B}/30, f/{空闲}/30, a/{D}/10}
+    \caption{案例 1 第 5 步后：最佳适应取恰好等大的尾块，低地址端留下 30 的整块}
+    \label{fig:case1bf}
+\end{figure}
+
+更值得注意的是第 6、7 步：两策略执行的是\textbf{同一串操作}，
+却触发了\textbf{不同的合并类型}——首次适应在第 7 步形成三块相邻，发生双侧合并；
+最佳适应的右侧邻居已分配给 D，只能作左合并。这说明策略差异不会孤立存在，
+一次选块分歧会通过后续释放与合并改变整个布局的演化路径，支持 H5。
+由此也可看出，评价策略的效果必须针对\textbf{具体负载序列}，
+离开负载谈"哪种策略更好"没有意义。
+
+\subsection{三种合并型式的验证}
+
+表 \ref{tab:merge} 汇总三种合并的触发位置，图 \ref{fig:merge} 给出双侧合并（三块合一）前后的布局。
+三块合一是最容易写错的情形：若实现只处理"左合并"或"右合并"之一，
+会留下两个相邻空闲区，违反第 \ref{subsec:checks} 节的第三项检查。
+
+\begin{table}[H]
+    \centering
+    \caption{三种合并型式的触发位置}
+    \label{tab:merge}
+    \small
+    \setlength{\tabcolsep}{5pt}
+    \begin{tabular}{ll>{\raggedright\arraybackslash}p{4.9cm}l}
+        \toprule
+        型式 & 触发步骤 & 合并前 & 合并后 \\
+        \midrule
+        仅右侧 & 案例 2 第 9、12 步 & 被释放区与右侧空闲区 & 合成一块 \\
+        双侧 & 案例 2 第 7 步、案例 1 第 7 步 & 左侧、被释放区、右侧 & 三块合一 \\
+        仅左侧 & 案例 2 第 6 步 & 左侧空闲区与被释放区 & 合成一块 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \membar{100}{f/{空闲}/20, a/{B}/20, f/{空闲}/20, a/{D}/20, f/{空闲}/20}
+
+    \smallskip
+    $\Downarrow$ \ 释放 B：左右两侧均为空闲区（案例 2 第 7 步）
+
+    \smallskip
+    \membar{100}{f/{空闲}/60, a/{D}/20, f/{空闲}/20}
+    \caption{双侧合并（三块合一）前后对比}
+    \label{fig:merge}
+\end{figure}
+
+\subsection{约束与非法操作检查}
+
+表 \ref{tab:checks} 为三项逐步检查与非法操作测试的结果。所有案例在每一步均通过守恒与不重叠检查，
+空闲表中未出现可合并而未合并的相邻块；四类非法操作均报错且状态逐字段不变。
+
+\begin{table}[H]
+    \centering
+    \caption{约束检查与非法操作测试结果}
+    \label{tab:checks}
+    \begin{tabular}{llc}
+        \toprule
+        检查项 & 方法 & 结果 \\
+        \midrule
+        已分配区不重叠 & 逐步自动检查 + 轨迹抽样核对 & 通过 \\
+        守恒：$\Sigma$已分配 $+\ \Sigma$空闲 $=T$ & 逐步自动检查 & 通过 \\
+        合并完整（无相邻空闲区） & 逐步自动检查 & 通过 \\
+        失败申请不改变状态 & 操作前后状态逐字段比对 & 通过 \\
+        重复释放、释放不存在编号 & 构造非法输入 & 报错且状态不变 \\
+        申请量 $\le 0$ 或 $>T$ & 构造非法输入 & 报错且状态不变 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{人工推演核对}
+
+对案例 3 按式 \eqref{eq:ff}–\eqref{eq:merge} 逐步手算，得到的布局与表 \ref{tab:case3} 一致：
+第 6 步手算的候选集为空，故判失败；第 8 步手算确认 $[20,30)$ 与 $[30,60)$ 首尾相接，
+合并后应得 $[20,90)$，与轨迹的输出相同。核对结果表明模型理解与实现一致，
+也说明判定失败的依据是式 \eqref{eq:criterion} 而非空闲总量。
+
+% ---------------------------------------------------------------
+\section{结论}\label{sec:concl}
+
+本文实现了首次适应与最佳适应两种连续内存分配策略及释放时的三种合并，并对三组序列做了双策略对照实验，
+主要结论如下。
+
+\begin{enumerate}
+    \item 连续分配要求地址连续。申请 $w$ 成功的充要条件是最大空闲块不小于 $w$（式 \eqref{eq:criterion}），
+          空闲总量只是必要条件；案例 3 中空闲总量 60、最大块 30 时申请 50 失败即为直接证据。
+    \item 该失败与选块策略无关。失败发生在候选集为空之时，与式 \eqref{eq:ff}、\eqref{eq:bf} 的选择规则无关，
+          故两种策略在同一序列上的失败步骤完全相同，假设 H3 成立。
+    \item 最佳适应的"最佳"限于单次选择。它使本次切割的剩余碎片最小，
+          但优先消耗恰好够用的块，中小申请反复出现时会把大块逐步碎化，
+          因此"最佳适应整体优于首次适应"（H4）不能成立为一般结论。
+    \item 策略差异具有累积效应。案例 1 中第 5 步的一次选块分歧，
+          经第 6、7 步的释放合并放大为整体布局差别，并使同一操作用触发不同的合并类型（H5 成立）。
+    \item 及时合并可降低空闲块数量，但不能消除外部碎片；二者是不同层面的问题。
+\end{enumerate}
+
+本文的局限也应说明。其一，模型不计管理开销、不作紧缩，
+结论适用于"整数地址、无重定位"的连续分配简化模型，不能直接外推到真实操作系统，
+后者通常以分页、伙伴系统或 Slab 等机制处理碎片问题。
+其二，实验规模为三组不超过 20 步的序列，属于有限案例，
+只能证明某些判断不成立（如 H4），不能证明某策略普遍最优。
+其三，本文只比较两种策略，未涉及下次适应、最坏适应或分页机制下的碎片表现，
+这构成了后续可以继续的工作。
+
+% ---------------------------------------------------------------
+\appendix
+\newpage
+\section{程序代码}
+
+全部代码以 JavaScript 实现，运行于浏览器（无第三方依赖），
+演示页面见封面组信息中的网址，也可直接打开 \texttt{web/index.html} 本地复现。
+核心部分包括状态表示与三项检查、两种选块策略、释放与合并，以及轨迹记录。
+
+\subsection*{A.1\quad 状态与检查（core.js）}
+\codefile{../web/core.js}
+
+\newpage
+\subsection*{A.2\quad 两种策略与合并（strategy.js）}
+\codefile{../web/strategy.js}
+
+\newpage
+\subsection*{A.3\quad 演示页面与轨迹输出（app.js）}
+\codefile{../web/app.js}
+
+\newpage
+\section{小组分工与贡献}\label{app:division}
+
+\begin{table}[H]
+    \centering
+    \caption{小组分工与个人证据位置}
+    \label{tab:division}
+    \begin{tabular}{clp{8.6cm}}
+        \toprule
+        成员 & 主要职责 & 个人成果与证据位置 \\
+        \midrule
+        成员一 & 内存模型与约束定义 & 第 \ref{sec:model} 节约定、守恒与重叠检查说明 \\
+        成员二 & 首次适应实现 & 式 \eqref{eq:ff} 实现、地址顺序查找与失败处理 \\
+        成员三 & 最佳适应实现 & 式 \eqref{eq:bf} 实现、同长取低地址规则与结果核对 \\
+        成员四 & 释放与合并测试 & 三种合并案例、重复释放与状态不变检查 \\
+        成员五 & 演示页面与比较分析 & 布局与指标页面、三组输入、人工推演表 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\section{AI 工具使用说明}\label{app:ai}
+
+按照课程要求，说明本组在项目过程中使用大语言模型的范围与核验方式。
+使用的工具与模型见表 \ref{tab:ai}，完整的问答原文与核验记录见仓库
+\texttt{model-interactions/} 目录（3--5 段关键交互）。
+
+\begin{table}[H]
+    \centering
+    \caption{大模型使用范围与学生判断}
+    \label{tab:ai}
+    \begin{tabular}{lp{5.2cm}p{5.2cm}}
+        \toprule
+        用途 & 涉及内容 & 核验方式与结论 \\
+        \midrule
+        策略比较与序列构造 & 请模型比较首次适应与最佳适应，并提出能体现差异的序列 & 运行验证模型的预测，依据轨迹判断采纳或修改 \\
+        失败原因解释 & 请模型解释"总量足够仍失败"及合并规则 & 用程序状态核对其是否混淆空闲总量与最大空闲块 \\
+        绝对化判断审查 & 请模型评价"最佳适应整体更优"等判断 & 构造反例或说明适用条件后决定取舍 \\
+        实现思路审查 & 请模型审查三种合并的处理顺序 & 用边界案例（三块合一）验证 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+以下内容由小组成员独立完成，未使用 AI 生成：
+\begin{enumerate}
+    \item 第 \ref{sec:model} 节的状态模型、式 \eqref{eq:ff}–\eqref{eq:merge} 的整理与手算，均由成员独立完成；
+    \item 核心算法实现（选块、切割、合并、三项检查）由成员独立编写并调试；
+    \item 全部实验结果（表 \ref{tab:case1}--\ref{tab:checks}）均由本组程序运行产生，可按附录 A 复现；
+    \item 模型给出的序列与判断均经实际运行或手工推演核验，未直接采信其结论。
+\end{enumerate}
+
+\end{document}
