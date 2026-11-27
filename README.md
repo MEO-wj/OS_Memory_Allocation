@@ -29,11 +29,9 @@
 │   └── 05-报告模板说明.md                  # 模板来源、选型理由、编译与控制篇幅
 ├── report/                          ← 报告模板（LaTeX / XeLaTeX）
 │   ├── report-template.tex          # 小组报告（基于计算方法实验报告模板）
-│   ├── individual-template.tex      # 个人分析（每人半页~一页）
 │   ├── Makefile                     # make 即编译（xelatex 两遍）
 │   ├── assets/logo.png              # 校徽（取自模板库）
-│   ├── report-template.pdf          # 编译产物
-│   └── individual-template.pdf      # 编译产物
+│   └── report-template.pdf          # 编译产物
 ├── web/                             ← 演示网页（Cloudflare Pages 部署根目录）
 ├── experiments/
 │   ├── inputs/                      ← 实验输入（操作序列 JSON）
@@ -74,7 +72,7 @@ open web/index.html          # macOS
 
 ## 报告模板（LaTeX）
 
-小组报告与个人分析用 `report/` 下的 LaTeX 模板，版式基线取自学校论文模板库
+小组报告用 `report/` 下的 LaTeX 模板（个人分析不提供 LaTeX 模板，直接写在 `individual/` 目录的 Markdown 中），版式基线取自学校论文模板库
 `Paper_Library/计算方法实验报告模板`（XeLaTeX + ctex），详见 `docs/05-报告模板说明.md`。
 
 章节骨架与评分维度对应：摘要 → 模型构建（假设与约束）→ 算法实现 → 实验设计 →
@@ -82,7 +80,7 @@ open web/index.html          # macOS
 
 ```bash
 cd report
-make                    # xelatex 跑两遍，生成 report-template.pdf 与 individual-template.pdf
+make                    # xelatex 跑两遍，生成 report-template.pdf
 make clean              # 清理 aux/log
 ```
 
