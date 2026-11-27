@@ -1,0 +1,225 @@
+[
+  {
+    "case_id": "case1-divergence",
+    "total_memory": 100,
+    "steps": 7,
+    "ff": {
+      "failCount": 0,
+      "failSteps": [],
+      "finalFreeBlocks": 1,
+      "finalFreeMax": 90,
+      "checks": {
+        "noOverlap": true,
+        "conservation": true,
+        "merged": true,
+        "ok": true,
+        "messages": []
+      }
+    },
+    "bf": {
+      "failCount": 0,
+      "failSteps": [],
+      "finalFreeBlocks": 1,
+      "finalFreeMax": 90,
+      "checks": {
+        "noOverlap": true,
+        "conservation": true,
+        "merged": true,
+        "ok": true,
+        "messages": []
+      }
+    },
+    "diffSteps": [
+      {
+        "step": 5,
+        "op": "alloc D",
+        "ff": "D[0,10) 空闲[10,30) B[30,60) C[60,90) 空闲[90,100)",
+        "bf": "空闲[0,30) B[30,60) C[60,90) D[90,100)"
+      },
+      {
+        "step": 6,
+        "op": "free B",
+        "ff": "D[0,10) 空闲[10,60) C[60,90) 空闲[90,100)",
+        "bf": "空闲[0,60) C[60,90) D[90,100)"
+      },
+      {
+        "step": 7,
+        "op": "free C",
+        "ff": "D[0,10) 空闲[10,100)",
+        "bf": "空闲[0,90) D[90,100)"
+      }
+    ]
+  },
+  {
+    "case_id": "case2-merge-all",
+    "total_memory": 100,
+    "steps": 12,
+    "ff": {
+      "failCount": 1,
+      "failSteps": [
+        11
+      ],
+      "finalFreeBlocks": 2,
+      "finalFreeMax": 60,
+      "checks": {
+        "noOverlap": true,
+        "conservation": true,
+        "merged": true,
+        "ok": true,
+        "messages": []
+      }
+    },
+    "bf": {
+      "failCount": 1,
+      "failSteps": [
+        11
+      ],
+      "finalFreeBlocks": 2,
+      "finalFreeMax": 60,
+      "checks": {
+        "noOverlap": true,
+        "conservation": true,
+        "merged": true,
+        "ok": true,
+        "messages": []
+      }
+    },
+    "diffSteps": []
+  },
+  {
+    "case_id": "case2b-merge-left",
+    "total_memory": 100,
+    "steps": 8,
+    "ff": {
+      "failCount": 0,
+      "failSteps": [],
+      "finalFreeBlocks": 2,
+      "finalFreeMax": 60,
+      "checks": {
+        "noOverlap": true,
+        "conservation": true,
+        "merged": true,
+        "ok": true,
+        "messages": []
+      }
+    },
+    "bf": {
+      "failCount": 0,
+      "failSteps": [],
+      "finalFreeBlocks": 2,
+      "finalFreeMax": 60,
+      "checks": {
+        "noOverlap": true,
+        "conservation": true,
+        "merged": true,
+        "ok": true,
+        "messages": []
+      }
+    },
+    "diffSteps": []
+  },
+  {
+    "case_id": "case3-fragmentation",
+    "total_memory": 90,
+    "steps": 9,
+    "ff": {
+      "failCount": 1,
+      "failSteps": [
+        6
+      ],
+      "finalFreeBlocks": 1,
+      "finalFreeMax": 90,
+      "checks": {
+        "noOverlap": true,
+        "conservation": true,
+        "merged": true,
+        "ok": true,
+        "messages": []
+      }
+    },
+    "bf": {
+      "failCount": 1,
+      "failSteps": [
+        6
+      ],
+      "finalFreeBlocks": 1,
+      "finalFreeMax": 90,
+      "checks": {
+        "noOverlap": true,
+        "conservation": true,
+        "merged": true,
+        "ok": true,
+        "messages": []
+      }
+    },
+    "diffSteps": []
+  },
+  {
+    "case_id": "case4-b2-counterexample",
+    "total_memory": 100,
+    "steps": 8,
+    "ff": {
+      "failCount": 1,
+      "failSteps": [
+        5
+      ],
+      "finalFreeBlocks": 0,
+      "finalFreeMax": 0,
+      "checks": {
+        "noOverlap": true,
+        "conservation": true,
+        "merged": true,
+        "ok": true,
+        "messages": []
+      }
+    },
+    "bf": {
+      "failCount": 2,
+      "failSteps": [
+        5,
+        8
+      ],
+      "finalFreeBlocks": 2,
+      "finalFreeMax": 40,
+      "checks": {
+        "noOverlap": true,
+        "conservation": true,
+        "merged": true,
+        "ok": true,
+        "messages": []
+      }
+    },
+    "diffSteps": [
+      {
+        "step": 4,
+        "op": "alloc C",
+        "ff": "C[0,25) 空闲[25,45) B[45,65) 空闲[65,100)",
+        "bf": "空闲[0,45) B[45,65) C[65,90) 空闲[90,100)"
+      },
+      {
+        "step": 5,
+        "op": "alloc D",
+        "ff": "C[0,25) 空闲[25,45) B[45,65) 空闲[65,100)",
+        "bf": "空闲[0,45) B[45,65) C[65,90) 空闲[90,100)"
+      },
+      {
+        "step": 6,
+        "op": "free B",
+        "ff": "C[0,25) 空闲[25,100)",
+        "bf": "空闲[0,65) C[65,90) 空闲[90,100)"
+      },
+      {
+        "step": 7,
+        "op": "alloc E",
+        "ff": "C[0,25) E[25,50) 空闲[50,100)",
+        "bf": "E[0,25) 空闲[25,65) C[65,90) 空闲[90,100)"
+      },
+      {
+        "step": 8,
+        "op": "alloc F",
+        "ff": "C[0,25) E[25,50) F[50,100)",
+        "bf": "E[0,25) 空闲[25,65) C[65,90) 空闲[90,100)"
+      }
+    ]
+  }
+]

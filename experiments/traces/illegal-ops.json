@@ -1,0 +1,100 @@
+[
+  {
+    "test": "重复申请同一编号 A",
+    "ok": false,
+    "code": "invalid",
+    "reason": "编号 A 已存在，不能重复申请",
+    "stateUnchanged": true,
+    "checksAfter": {
+      "noOverlap": true,
+      "conservation": true,
+      "merged": true,
+      "ok": true,
+      "messages": []
+    }
+  },
+  {
+    "test": "释放不存在的编号 Z",
+    "ok": false,
+    "code": "invalid",
+    "reason": "编号 Z 不存在或已释放，不能重复释放",
+    "stateUnchanged": true,
+    "checksAfter": {
+      "noOverlap": true,
+      "conservation": true,
+      "merged": true,
+      "ok": true,
+      "messages": []
+    }
+  },
+  {
+    "test": "申请量为 0",
+    "ok": false,
+    "code": "invalid",
+    "reason": "申请量必须大于 0",
+    "stateUnchanged": true,
+    "checksAfter": {
+      "noOverlap": true,
+      "conservation": true,
+      "merged": true,
+      "ok": true,
+      "messages": []
+    }
+  },
+  {
+    "test": "申请量为负",
+    "ok": false,
+    "code": "invalid",
+    "reason": "申请量必须大于 0",
+    "stateUnchanged": true,
+    "checksAfter": {
+      "noOverlap": true,
+      "conservation": true,
+      "merged": true,
+      "ok": true,
+      "messages": []
+    }
+  },
+  {
+    "test": "申请量超过总内存",
+    "ok": false,
+    "code": "invalid",
+    "reason": "申请量 101 超过总内存 100",
+    "stateUnchanged": true,
+    "checksAfter": {
+      "noOverlap": true,
+      "conservation": true,
+      "merged": true,
+      "ok": true,
+      "messages": []
+    }
+  },
+  {
+    "test": "申请量非整数",
+    "ok": false,
+    "code": "invalid",
+    "reason": "申请量必须是整数",
+    "stateUnchanged": true,
+    "checksAfter": {
+      "noOverlap": true,
+      "conservation": true,
+      "merged": true,
+      "ok": true,
+      "messages": []
+    }
+  },
+  {
+    "test": "重复释放 A",
+    "ok": false,
+    "code": "invalid",
+    "reason": "编号 A 不存在或已释放，不能重复释放",
+    "stateUnchanged": true,
+    "checksAfter": {
+      "noOverlap": true,
+      "conservation": true,
+      "merged": true,
+      "ok": true,
+      "messages": []
+    }
+  }
+]

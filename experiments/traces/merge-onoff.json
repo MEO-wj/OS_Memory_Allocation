@@ -1,0 +1,133 @@
+{
+  "case_id": "case3-fragmentation",
+  "merge_on": [
+    {
+      "step": 1,
+      "free_count": 1,
+      "free_total": 60,
+      "free_max": 60,
+      "merged_check": true
+    },
+    {
+      "step": 2,
+      "free_count": 1,
+      "free_total": 30,
+      "free_max": 30,
+      "merged_check": true
+    },
+    {
+      "step": 3,
+      "free_count": 0,
+      "free_total": 0,
+      "free_max": 0,
+      "merged_check": true
+    },
+    {
+      "step": 4,
+      "free_count": 1,
+      "free_total": 30,
+      "free_max": 30,
+      "merged_check": true
+    },
+    {
+      "step": 5,
+      "free_count": 2,
+      "free_total": 60,
+      "free_max": 30,
+      "merged_check": true
+    },
+    {
+      "step": 6,
+      "free_count": 2,
+      "free_total": 60,
+      "free_max": 30,
+      "merged_check": true
+    },
+    {
+      "step": 7,
+      "free_count": 2,
+      "free_total": 40,
+      "free_max": 30,
+      "merged_check": true
+    },
+    {
+      "step": 8,
+      "free_count": 1,
+      "free_total": 70,
+      "free_max": 70,
+      "merged_check": true
+    },
+    {
+      "step": 9,
+      "free_count": 1,
+      "free_total": 90,
+      "free_max": 90,
+      "merged_check": true
+    }
+  ],
+  "merge_off": [
+    {
+      "step": 1,
+      "free_count": 1,
+      "free_total": 60,
+      "free_max": 60,
+      "merged_check": true
+    },
+    {
+      "step": 2,
+      "free_count": 1,
+      "free_total": 30,
+      "free_max": 30,
+      "merged_check": true
+    },
+    {
+      "step": 3,
+      "free_count": 0,
+      "free_total": 0,
+      "free_max": 0,
+      "merged_check": true
+    },
+    {
+      "step": 4,
+      "free_count": 1,
+      "free_total": 30,
+      "free_max": 30,
+      "merged_check": true
+    },
+    {
+      "step": 5,
+      "free_count": 2,
+      "free_total": 60,
+      "free_max": 30,
+      "merged_check": true
+    },
+    {
+      "step": 6,
+      "free_count": 2,
+      "free_total": 60,
+      "free_max": 30,
+      "merged_check": true
+    },
+    {
+      "step": 7,
+      "free_count": 2,
+      "free_total": 40,
+      "free_max": 30,
+      "merged_check": true
+    },
+    {
+      "step": 8,
+      "free_count": 3,
+      "free_total": 70,
+      "free_max": 30,
+      "merged_check": false
+    },
+    {
+      "step": 9,
+      "free_count": 4,
+      "free_total": 90,
+      "free_max": 30,
+      "merged_check": false
+    }
+  ]
+}

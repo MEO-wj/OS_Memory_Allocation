@@ -1,0 +1,66 @@
+{
+  "note": "判据探针：申请能否成功取决于最大空闲块，与空闲总量无关",
+  "allConsistent": true,
+  "probes": [
+    {
+      "desc": "总量 60、最大块 30，申请 50",
+      "total_memory": 90,
+      "free_total_before": 60,
+      "free_max_before": 30,
+      "free_count_before": 2,
+      "request_size": 50,
+      "result": "fail",
+      "reason": "空闲总量 60，最大空闲块 30，没有一块能容纳 50",
+      "expectation": "失败",
+      "consistent": true
+    },
+    {
+      "desc": "总量 60、最大块 60，申请 50",
+      "total_memory": 90,
+      "free_total_before": 60,
+      "free_max_before": 60,
+      "free_count_before": 1,
+      "request_size": 50,
+      "result": "ok",
+      "start": 30,
+      "expectation": "成功",
+      "consistent": true
+    },
+    {
+      "desc": "总量 50、最大块 25，申请 30",
+      "total_memory": 100,
+      "free_total_before": 50,
+      "free_max_before": 25,
+      "free_count_before": 3,
+      "request_size": 30,
+      "result": "fail",
+      "reason": "空闲总量 50，最大空闲块 25，没有一块能容纳 30",
+      "expectation": "失败",
+      "consistent": true
+    },
+    {
+      "desc": "总量 40 = 申请 40，最大块 40",
+      "total_memory": 100,
+      "free_total_before": 40,
+      "free_max_before": 40,
+      "free_count_before": 1,
+      "request_size": 40,
+      "result": "ok",
+      "start": 60,
+      "expectation": "成功",
+      "consistent": true
+    },
+    {
+      "desc": "总量 41、最大块 41，申请 40",
+      "total_memory": 100,
+      "free_total_before": 41,
+      "free_max_before": 41,
+      "free_count_before": 1,
+      "request_size": 40,
+      "result": "ok",
+      "start": 59,
+      "expectation": "成功",
+      "consistent": true
+    }
+  ]
+}
